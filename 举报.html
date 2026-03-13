@@ -164,26 +164,29 @@
 
     <!-- 对方账号信息 -->
     <div class="card">
-      <h2>对方账号信息</h2>
-      <div class="frow">
-        <div class="fgroup">
-          <label>平台<span class="req">*</span></label>
-          <select name="账号平台" required>
-            <option value="">请选择</option>
-            <option>咸鱼（闲鱼）</option>
-            <option>微信</option>
-            <option>QQ</option>
-            <option>旺旺（淘宝）</option>
-            <option>小红书</option>
-            <option>微博</option>
-            <option>其他</option>
-          </select>
-        </div>
-        <div class="fgroup">
-          <label>账号 ID / 昵称<span class="req">*</span></label>
-          <input type="text" name="账号ID或昵称" placeholder="如：闲鱼ID、微信号" required>
+      <h2>对方账号信息 <span style="font-size:12px;font-weight:400;color:var(--gray)">（可添加多个）</span></h2>
+      <div id="accountList">
+        <div class="account-row frow" style="margin-bottom:12px">
+          <div class="fgroup" style="margin:0">
+            <label>平台<span class="req">*</span></label>
+            <select name="账号平台[]" required>
+              <option value="">请选择</option>
+              <option>咸鱼（闲鱼）</option>
+              <option>微信</option>
+              <option>QQ</option>
+              <option>旺旺（淘宝）</option>
+              <option>小红书</option>
+              <option>微博</option>
+              <option>其他</option>
+            </select>
+          </div>
+          <div class="fgroup" style="margin:0">
+            <label>账号 ID / 昵称<span class="req">*</span></label>
+            <input type="text" name="账号ID[]" placeholder="如：闲鱼ID、微信号" required>
+          </div>
         </div>
       </div>
+      <button type="button" onclick="addAccount()" style="background:none;border:1.5px dashed var(--border);border-radius:8px;padding:8px 16px;font-size:13px;color:var(--gray);cursor:pointer;width:100%;margin-top:4px">+ 添加另一个账号</button>
     </div>
 
     <!-- 遭遇描述 -->
@@ -233,9 +236,15 @@
     <!-- 联系方式 -->
     <div class="card">
       <h2>联系方式<span style="font-weight:400;font-size:13px;color:var(--gray)">（选填，方便后续核实）</span></h2>
-      <div class="fgroup">
-        <label>微信号 / 小红书号 / 其他</label>
-        <input type="text" name="联系方式" placeholder="留空也可以提交">
+      <div class="frow">
+        <div class="fgroup">
+          <label>手机号</label>
+          <input type="tel" name="手机号" placeholder="留空也可以提交">
+        </div>
+        <div class="fgroup">
+          <label>微信号</label>
+          <input type="text" name="微信号" placeholder="留空也可以提交">
+        </div>
       </div>
     </div>
 
@@ -256,6 +265,33 @@
 </div>
 
 <script>
+function addAccount() {
+  const list = document.getElementById('accountList');
+  const row = document.createElement('div');
+  row.className = 'account-row frow';
+  row.style.marginBottom = '12px';
+  row.innerHTML = `
+    <div class="fgroup" style="margin:0">
+      <label>平台</label>
+      <select name="账号平台[]">
+        <option value="">请选择</option>
+        <option>咸鱼（闲鱼）</option>
+        <option>微信</option>
+        <option>QQ</option>
+        <option>旺旺（淘宝）</option>
+        <option>小红书</option>
+        <option>微博</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="fgroup" style="margin:0;position:relative">
+      <label>账号 ID / 昵称</label>
+      <input type="text" name="账号ID[]" placeholder="如：闲鱼ID、微信号">
+      <button type="button" onclick="this.closest('.account-row').remove()" style="position:absolute;right:8px;top:28px;background:none;border:none;font-size:18px;color:#d1d5db;cursor:pointer;line-height:1">×</button>
+    </div>`;
+  list.appendChild(row);
+}
+
 function showFiles(input) {
   const names = Array.from(input.files).map(f => f.name).join('、');
   document.getElementById('fileNames').textContent = names ? `已选：${names}` : '';
