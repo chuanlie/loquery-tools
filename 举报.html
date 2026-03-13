@@ -196,8 +196,9 @@
           <label class="ptag"><input type="checkbox" name="问题类型[]" value="收定金后失联"> 收定金后失联</label>
           <label class="ptag"><input type="checkbox" name="问题类型[]" value="定金纠纷"> 定金纠纷</label>
           <label class="ptag"><input type="checkbox" name="问题类型[]" value="换号重复作案"> 换号重复作案</label>
-          <label class="ptag"><input type="checkbox" name="问题类型[]" value="其他"> 其他</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="其他" onchange="toggleOtherIssue(this)"> 其他</label>
         </div>
+        <input type="text" id="otherIssueInput" name="问题类型_其他说明" placeholder="请说明是什么问题" style="display:none;margin-top:10px;width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit">
       </div>
       <div class="frow">
         <div class="fgroup">
@@ -259,6 +260,10 @@
 </div>
 
 <script>
+function toggleOtherIssue(cb) {
+  document.getElementById('otherIssueInput').style.display = cb.checked ? 'block' : 'none';
+}
+
 function togglePlatform(cb) {
   const hint = document.getElementById('platformHint');
   const container = document.getElementById('accountInputs');
