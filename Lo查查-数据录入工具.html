@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lo 查查 · 风险数据录入工具</title>
+<style>
+:root {
+  --rose: #D4607A; --pink: #F4A7B9; --pink-light: #FEF0F4;
+  --cream: #FFFAF8; --border: #F0D5DC; --text: #2D1B22; --muted: #8B5A6A;
+  --green: #10B981; --amber: #F59E0B; --red: #EF4444;
+  --shadow: 0 2px 12px rgba(180,80,100,0.1); --r: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:var(--cream); color:var(--text); }
+
+/* 布局 */
+.layout { display:grid; grid-template-columns:1fr 400px; min-height:100vh; }
+.left { padding:32px; border-right:1px solid var(--border); overflow-y:auto; }
+.right { padding:24px; background:#fff; overflow-y:auto; }
+
+/* 顶部 */
+.header { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+.header h1 { font-size:20px; font-weight:800; color:var(--rose); }
+.header p { font-size:13px; color:var(--muted); margin-top:2px; }
+.badge { background:var(--pink-light); color:var(--rose); font-size:11px; font-weight:700; padding:4px 10px; border-radius:50px; border:1px solid var(--pink); }
+
+/* 表单 */
+.form-section { background:#fff; border-radius:var(--r); padding:24px; box-shadow:var(--shadow); margin-bottom:20px; }
+.form-section h2 { font-size:14px; font-weight:800; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.form-section h2::before { content:''; width:3px; height:16px; background:linear-gradient(var(--pink),var(--rose)); border-radius:2px; display:block; }
+.frow { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.fgroup { margin-bottom:14px; }
+.fgroup:last-child { margin-bottom:0; }
+.flabel { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+.flabel sup { color:var(--rose); }
+.finput, .fselect, .ftextarea {
+  width:100%; padding:9px 13px; border:1.5px solid var(--border); border-radius:8px;
+  font-size:13px; color:var(--text); outline:none; transition:border-color .15s;
+  font-family:inherit; background:#fff;
+}
+.finput:focus, .fselect:focus, .ftextarea:focus { border-color:var(--rose); }
+.ftextarea { resize:vertical; min-height:72px; }
+
+/* 风险等级选择 */
+.level-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.level-opt { border:2px solid var(--border); border-radius:8px; padding:10px; text-align:center; cursor:pointer; transition:all .15s; }
+.level-opt input { display:none; }
+.level-opt span { font-size:13px; font-weight:700; }
+.level-opt.sel-high { border-color:#FCA5A5; background:#FFF1F2; }
+.level-opt.sel-high span { color:#B91C1C; }
+.level-opt.sel-mid  { border-color:#FCD34D; background:#FFFBEB; }
+.level-opt.sel-mid  span { color:#B45309; }
+.level-opt.sel-low  { border-color:#86EFAC; background:#F0FDF4; }
+.level-opt.sel-low  span { color:#15803D; }
+
+/* 关联账号动态添加 */
+.related-list { display:grid; gap:8px; margin-top:8px; }
+.related-item { display:flex; gap:8px; align-items:center; }
+.related-item .finput { flex:1; }
+.del-btn { width:30px; height:30px; border:none; background:#FEE2E2; color:#B91C1C; border-radius:6px; cursor:pointer; font-size:16px; flex-shrink:0; }
+.add-link { font-size:12px; color:var(--rose); cursor:pointer; margin-top:6px; display:inline-block; }
+.add-link:hover { text-decoration:underline; }
+
+/* 按钮 */
+.btn-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+.btn-submit { padding:12px; background:linear-gradient(135deg,var(--pink),var(--rose)); color:#fff; border:none; border-radius:50px; font-size:14px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.btn-submit:hover { opacity:.88; }
+.btn-clear { padding:12px; background:none; border:1.5px solid var(--border); border-radius:50px; font-size:14px; color:var(--muted); cursor:pointer; }
+.btn-clear:hover { border-color:var(--rose); color:var(--rose); }
+
+/* 右侧：数据库预览 */
+.right h2 { font-size:15px; font-weight:800; margin-bottom:4px; }
+.right .sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+.db-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.db-stat { background:var(--pink-light); border-radius:8px; padding:12px; text-align:center; }
+.db-stat-n { font-size:22px; font-weight:900; color:var(--rose); }
+.db-stat-l { font-size:11px; color:var(--muted); margin-top:2px; }
+.mini-section { margin:18px 0 20px; }
+.mini-section h3 { font-size:13px; font-weight:700; margin-bottom:10px; }
+.mini-grid { display:grid; gap:8px; }
+.mini-item { display:flex; align-items:center; justify-content:space-between; gap:12px; background:#fff; border:1.5px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12px; }
+.mini-item span:first-child { color:var(--muted); line-height:1.5; }
+.mini-item strong { color:var(--text); font-size:12px; }
+
+/* 记录列表 */
+.record-list { display:grid; gap:10px; }
+.record-card { border:1.5px solid var(--border); border-radius:10px; padding:14px; position:relative; transition:box-shadow .15s; }
+.record-card:hover { box-shadow:var(--shadow); }
+.record-card.high { border-left:4px solid #FCA5A5; }
+.record-card.mid  { border-left:4px solid #FCD34D; }
+.record-card.low  { border-left:4px solid #86EFAC; }
+.rc-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.rc-badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:50px; }
+.rb-high { background:#FEE2E2; color:#B91C1C; }
+.rb-mid  { background:#FEF3C7; color:#92400E; }
+.rb-low  { background:#DCFCE7; color:#15803D; }
+.rc-name { font-size:13px; font-weight:700; flex:1; }
+.rc-del { background:none; border:none; color:#CBD5E1; cursor:pointer; font-size:16px; padding:0 4px; }
+.rc-del:hover { color:var(--red); }
+.rc-meta { font-size:11px; color:var(--muted); line-height:1.7; }
+.rc-desc { font-size:12px; color:var(--text); margin-top:6px; line-height:1.5; }
+.rc-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.rc-tag { font-size:10px; font-weight:600; background:var(--pink-light); color:var(--rose); padding:2px 8px; border-radius:50px; }
+
+/* 导出区 */
+.export-area { margin-top:20px; }
+.export-area h3 { font-size:13px; font-weight:700; margin-bottom:10px; }
+.export-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.exp-btn { padding:10px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; color:var(--text); }
+.exp-btn:hover { border-color:var(--rose); color:var(--rose); }
+.exp-btn.primary { background:linear-gradient(135deg,var(--pink),var(--rose)); color:#fff; border:none; }
+
+/* Toast */
+.toast { display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1F2937; color:#fff; padding:10px 22px; border-radius:50px; font-size:13px; font-weight:500; z-index:999; }
+
+/* 空状态 */
+.empty { text-align:center; padding:40px 20px; color:var(--muted); }
+.empty .eicon { font-size:40px; margin-bottom:10px; }
+.empty p { font-size:13px; line-height:1.7; }
+
+@media(max-width:900px) {
+  .layout { grid-template-columns:1fr; }
+  .right { border-top:1px solid var(--border); }
+  .frow { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- 左：录入表单 -->
+  <div class="left">
+    <div class="header">
+      <div>
+        <h1>🔐 Lo 查查 · 数据录入工具</h1>
+        <p>仅限内部使用 · 录入的数据保存在本地浏览器</p>
+      </div>
+      <span class="badge">内测版</span>
+      <a href="Lo查查-AI解析助手.html" style="margin-left:auto;text-decoration:none;background:#7C3AED;color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600">🤖 AI 批量解析</a>
+    </div>
+
+    <!-- 基本信息 -->
+    <div class="form-section">
+      <h2>账号信息</h2>
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">账号类型 <sup>*</sup></label>
+          <select class="fselect" id="f-account-type">
+            <option value="">请选择</option>
+            <option value="咸鱼">咸鱼 ID</option>
+            <option value="微信">微信号</option>
+            <option value="QQ">QQ 号</option>
+            <option value="旺旺">淘宝旺旺</option>
+            <option value="小红书">小红书</option>
+            <option value="微博">微博</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label class="flabel">账号 ID <sup>*</sup></label>
+          <input class="finput" id="f-account-id" type="text" placeholder="完整账号 ID" />
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">昵称</label>
+        <input class="finput" id="f-nickname" type="text" placeholder="当时的昵称（可填多个，用 / 分隔）" />
+      </div>
+      <div class="fgroup">
+        <label class="flabel">关联账号 <small style="font-weight:400;color:var(--muted)">（同一主体的其他账号）</small></label>
+        <div class="related-list" id="related-list">
+          <div class="related-item">
+            <input class="finput" type="text" placeholder="如：微信号 xxxx" />
+            <button class="del-btn" onclick="delRelated(this)">×</button>
+          </div>
+        </div>
+        <span class="add-link" onclick="addRelated()">+ 添加关联账号</span>
+      </div>
+    </div>
+
+    <!-- 风险信息 -->
+    <div class="form-section">
+      <h2>风险评级</h2>
+      <div class="fgroup">
+        <label class="flabel">风险等级 <sup>*</sup></label>
+        <div class="level-row">
+          <label class="level-opt" id="lopt-high" onclick="selectLevel('high')">
+            <input type="radio" name="level" value="high" />
+            <div style="font-size:18px;margin-bottom:4px">🔴</div>
+            <span>高风险</span>
+          </label>
+          <label class="level-opt" id="lopt-mid" onclick="selectLevel('mid')">
+            <input type="radio" name="level" value="mid" />
+            <div style="font-size:18px;margin-bottom:4px">🟡</div>
+            <span>中风险</span>
+          </label>
+          <label class="level-opt" id="lopt-low" onclick="selectLevel('low')">
+            <input type="radio" name="level" value="low" />
+            <div style="font-size:18px;margin-bottom:4px">🟢</div>
+            <span>待观察</span>
+          </label>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">问题类型 <sup>*</sup></label>
+          <select class="fselect" id="f-issue-type">
+            <option value="">请选择</option>
+            <option>收款后不发货/跑路</option>
+            <option>引流微信私下转账</option>
+            <option>假货/货不对版</option>
+            <option>定金纠纷</option>
+            <option>收定金后失联</option>
+            <option>换号重复作案</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label class="flabel">交易平台</label>
+          <select class="fselect" id="f-platform">
+            <option value="">请选择</option>
+            <option>咸鱼</option>
+            <option>微信私下</option>
+            <option>小红书</option>
+            <option>淘宝/天猫</option>
+            <option>QQ 群</option>
+            <option>多平台</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">举报人数（条）</label>
+          <input class="finput" id="f-count" type="number" placeholder="已知受害人数" min="1" />
+        </div>
+        <div class="fgroup">
+          <label class="flabel">涉及金额（元）</label>
+          <input class="finput" id="f-amount" type="text" placeholder="如：3200 或 2万+" />
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">最近作案时间</label>
+          <input class="finput" id="f-last-date" type="month" />
+        </div>
+        <div class="fgroup">
+          <label class="flabel">来源类型</label>
+          <select class="fselect" id="f-source">
+            <option value="创始人整理">创始人整理</option>
+            <option value="粉丝举报">粉丝举报</option>
+            <option value="维权视频素材">维权视频素材</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label class="flabel">证据完整度 <sup>*</sup></label>
+          <select class="fselect" id="f-evidence-level">
+            <option value="">请选择</option>
+            <option value="high">高 - 证据链完整</option>
+            <option value="mid">中 - 有部分证据</option>
+            <option value="low">低 - 仅线索待补充</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label class="flabel">前台展示状态 <sup>*</sup></label>
+          <select class="fselect" id="f-display-status">
+            <option value="">请选择</option>
+            <option value="yes">✅ 可前台展示</option>
+            <option value="no">🔒 仅内部参考</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">来源详情 <small style="font-weight:400">（便于复核溯源）</small></label>
+        <input class="finput" id="f-source-detail" type="text" placeholder="如：2025-11-罗丽塔预售跑路视频、粉丝私信2026-01-03、案件文件夹/xx" />
+      </div>
+    </div>
+
+    <!-- 脱敏描述 -->
+    <div class="form-section">
+      <h2>展示描述（前台展示用）</h2>
+      <div class="fgroup">
+        <label class="flabel">脱敏描述 <sup>*</sup> <small style="font-weight:400">（不写完整账号/手机号，用"该账号"代替）</small></label>
+        <textarea class="ftextarea" id="f-desc" placeholder="例：该账号被多名用户反映预售收款后长期不发货，催款后拉黑，涉及金额数千元。"></textarea>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">判定依据 <small style="font-weight:400">（让用户明白为什么这个评级）</small></label>
+        <input class="finput" id="f-basis" type="text" placeholder="例：3条审核通过举报 + 存在关联主体 + 涉及金额超¥5000" />
+      </div>
+      <div class="fgroup">
+        <label class="flabel">内部备注 <small style="font-weight:400">（不对外展示，审核用）</small></label>
+        <textarea class="ftextarea" id="f-note" style="min-height:56px" placeholder="可填完整账号、证据链接、视频时间码等，仅内部可见"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-clear" onclick="clearForm()">清空</button>
+      <button class="btn-submit" onclick="saveRecord()">保存到数据库 →</button>
+    </div>
+  </div>
+
+  <!-- 右：数据预览 -->
+  <div class="right">
+    <h2>📊 当前数据库</h2>
+    <p class="sub">本地存储，关闭浏览器不会丢失 · 可随时导出</p>
+
+    <div class="db-stats">
+      <div class="db-stat"><div class="db-stat-n" id="stat-total">0</div><div class="db-stat-l">总记录</div></div>
+      <div class="db-stat"><div class="db-stat-n" id="stat-high">0</div><div class="db-stat-l">高风险</div></div>
+      <div class="db-stat"><div class="db-stat-n" id="stat-mid">0</div><div class="db-stat-l">中风险</div></div>
+    </div>
+
+    <div class="mini-section">
+      <h3>当前数据概况</h3>
+      <div class="mini-grid" id="summary-grid"></div>
+    </div>
+
+    <div class="mini-section">
+      <h3>问题类型统计</h3>
+      <div class="mini-grid" id="issue-grid"></div>
+    </div>
+
+    <div class="mini-section">
+      <h3>来源统计</h3>
+      <div class="mini-grid" id="source-grid"></div>
+    </div>
+
+    <div class="record-list" id="record-list">
+      <div class="empty">
+        <div class="eicon">📭</div>
+        <p>还没有记录<br>填写左边的表单开始录入</p>
+      </div>
+    </div>
+
+    <div class="export-area">
+      <h3>导出数据</h3>
+      <div class="export-btns">
+        <button class="exp-btn primary" onclick="exportJSON()">📥 导出 JSON</button>
+        <button class="exp-btn" onclick="exportCSV()">📊 导出 CSV</button>
+        <button class="exp-btn" onclick="copyJSON()">📋 复制 JSON</button>
+        <button class="exp-btn" onclick="clearAll()" style="color:#EF4444;border-color:#FCA5A5">🗑️ 清空全部</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ 状态 ══
+let db = JSON.parse(localStorage.getItem('loquery_db') || '[]');
+let selectedLevel = '';
+
+// ══ 初始化 ══
+renderDB();
+
+// ══ 风险等级 ══
+function selectLevel(lv) {
+  selectedLevel = lv;
+  ['high','mid','low'].forEach(l => {
+    const el = document.getElementById('lopt-' + l);
+    el.className = 'level-opt';
+    if (l === lv) el.classList.add('sel-' + l);
+  });
+}
+
+// ══ 关联账号 ══
+function addRelated() {
+  const list = document.getElementById('related-list');
+  const div = document.createElement('div');
+  div.className = 'related-item';
+  div.innerHTML = `<input class="finput" type="text" placeholder="如：微信号 xxxx" /><button class="del-btn" onclick="delRelated(this)">×</button>`;
+  list.appendChild(div);
+}
+function delRelated(btn) {
+  const list = document.getElementById('related-list');
+  if (list.children.length > 1) btn.parentElement.remove();
+}
+
+// ══ 保存记录 ══
+function saveRecord() {
+  const subjectName = document.getElementById('f-subject-name').value.trim();
+  const accountType = document.getElementById('f-account-type').value;
+  const accountId   = document.getElementById('f-account-id').value.trim();
+  const desc        = document.getElementById('f-desc').value.trim();
+  const evidenceLevel = document.getElementById('f-evidence-level').value;
+  const displayStatus = document.getElementById('f-display-status').value;
+
+  if (!subjectName) { toast('请填写主体名称'); return; }
+  if (!accountType) { toast('请选择账号类型'); return; }
+  if (!accountId)   { toast('请填写账号 ID'); return; }
+  if (!selectedLevel){ toast('请选择风险等级'); return; }
+  if (!document.getElementById('f-issue-type').value) { toast('请选择问题类型'); return; }
+  if (!evidenceLevel) { toast('请选择证据完整度'); return; }
+  if (!displayStatus) { toast('请选择前台展示状态'); return; }
+  if (!desc)        { toast('请填写脱敏描述'); return; }
+
+  // 去重检查
+  const dup = db.find(r => r.account_type === accountType && r.account_id.toLowerCase() === accountId.toLowerCase());
+  if (dup) {
+    if (!confirm(`⚠️ 已存在相同记录：${accountType} · ${dup.account_id}\n\n确认继续保存为新记录？（如需修改已有记录请先删除）`)) return;
+  }
+
+  const related = Array.from(document.querySelectorAll('#related-list .finput'))
+    .map(i => i.value.trim()).filter(Boolean);
+
+  const record = {
+    id: Date.now(),
+    account_type:    accountType,
+    account_id:      accountId,
+    nickname:        document.getElementById('f-nickname').value.trim(),
+    subject_name:    subjectName,
+    related_accounts: related,
+    risk_level:      selectedLevel,
+    issue_type:      document.getElementById('f-issue-type').value,
+    platform:        document.getElementById('f-platform').value,
+    report_count:    parseInt(document.getElementById('f-count').value) || 1,
+    amount:          document.getElementById('f-amount').value.trim(),
+    last_date:       document.getElementById('f-last-date').value,
+    source:          document.getElementById('f-source').value,
+    source_detail:   document.getElementById('f-source-detail').value.trim(),
+    evidence_level:  evidenceLevel,
+    display_status:  displayStatus,
+    desc:            desc,
+    basis:           document.getElementById('f-basis').value.trim(),
+    note:            document.getElementById('f-note').value.trim(),
+    created_at:      new Date().toISOString().slice(0,10),
+  };
+
+  db.push(record);
+  save();
+  renderDB();
+  clearForm();
+  toast('✅ 已保存：' + accountType + ' ' + accountId);
+}
+
+// ══ 渲染数据库 ══
+function renderDB() {
+  const el = document.getElementById('record-list');
+  const summaryGrid = document.getElementById('summary-grid');
+  const issueGrid = document.getElementById('issue-grid');
+  const sourceGrid = document.getElementById('source-grid');
+  document.getElementById('stat-total').textContent = db.length;
+  document.getElementById('stat-high').textContent  = db.filter(r => r.risk_level==='high').length;
+  document.getElementById('stat-mid').textContent   = db.filter(r => r.risk_level==='mid').length;
+
+  if (!db.length) {
+    summaryGrid.innerHTML = `<div class="mini-item"><span>还没有统计数据</span><strong>0</strong></div>`;
+    issueGrid.innerHTML = `<div class="mini-item"><span>还没有统计数据</span><strong>0</strong></div>`;
+    sourceGrid.innerHTML = `<div class="mini-item"><span>还没有统计数据</span><strong>0</strong></div>`;
+    el.innerHTML = `<div class="empty"><div class="eicon">📭</div><p>还没有记录<br>填写左边的表单开始录入</p></div>`;
+    return;
+  }
+
+  const lvLabel = { high:'高风险', mid:'中风险', low:'待观察' };
+  const evidenceLabel = { high:'证据高', mid:'证据中', low:'证据低' };
+  const displayLabel = { yes:'可前台展示', no:'仅内部参考' };
+  const summaryItems = [
+    ['可前台展示', db.filter(r => r.display_status === 'yes').length],
+    ['仅内部参考', db.filter(r => r.display_status === 'no').length],
+    ['高证据记录', db.filter(r => r.evidence_level === 'high').length],
+    ['独立主体数', new Set(db.map(r => r.subject_name).filter(Boolean)).size],
+  ];
+  summaryGrid.innerHTML = summaryItems.map(([label, value]) => `
+    <div class="mini-item"><span>${label}</span><strong>${value}</strong></div>
+  `).join('');
+
+  issueGrid.innerHTML = buildStatItems(countBy(db, 'issue_type'));
+  sourceGrid.innerHTML = buildStatItems(countBy(db, 'source'));
+
+  el.innerHTML = [...db].reverse().map(r => `
+    <div class="record-card ${r.risk_level}">
+      <div class="rc-top">
+        <span class="rc-badge rb-${r.risk_level}">${lvLabel[r.risk_level]}</span>
+        <span class="rc-name">${r.account_type} · ${r.account_id}</span>
+        <button class="rc-del" onclick="deleteRecord(${r.id})" title="删除">×</button>
+      </div>
+      <div class="rc-meta">
+        ${r.nickname ? '昵称：' + r.nickname + ' &nbsp;·&nbsp; ' : ''}
+        ${r.issue_type} &nbsp;·&nbsp;
+        ${r.report_count} 条记录
+        ${r.amount ? ' &nbsp;·&nbsp; ¥' + r.amount : ''}
+        &nbsp;·&nbsp; <span style="color:${r.display_status==='yes'?'#15803D':'#6B7280'};font-weight:600">${displayLabel[r.display_status] || r.display_status || '未标记'}</span>
+      </div>
+      ${r.subject_name ? `<div class="rc-meta" style="margin-top:3px">主体：${r.subject_name}</div>` : ''}
+      ${r.evidence_level ? `<div class="rc-meta" style="margin-top:2px">证据：${evidenceLabel[r.evidence_level] || r.evidence_level}</div>` : ''}
+      ${r.related_accounts?.length ? `<div class="rc-meta" style="margin-top:2px">关联账号：${r.related_accounts.join('、')}</div>` : ''}
+      <div class="rc-desc">${r.desc}</div>
+      ${r.basis ? `<div class="rc-meta" style="margin-top:4px">依据：${r.basis}</div>` : ''}
+      ${r.source_detail ? `<div class="rc-meta" style="margin-top:2px">来源：${r.source} · ${r.source_detail}</div>` : ''}
+    </div>`).join('');
+}
+
+// ══ 删除 ══
+function deleteRecord(id) {
+  if (!confirm('确认删除这条记录？')) return;
+  db = db.filter(r => r.id !== id);
+  save();
+  renderDB();
+}
+
+// ══ 清空表单 ══
+function clearForm() {
+  ['f-account-type','f-account-id','f-nickname','f-subject-name','f-issue-type','f-platform','f-count','f-amount','f-last-date','f-source-detail','f-evidence-level','f-display-status','f-desc','f-basis','f-note'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  selectedLevel = '';
+  ['high','mid','low'].forEach(l => document.getElementById('lopt-' + l).className = 'level-opt');
+  document.getElementById('related-list').innerHTML = `
+    <div class="related-item">
+      <input class="finput" type="text" placeholder="如：微信号 xxxx" />
+      <button class="del-btn" onclick="delRelated(this)">×</button>
+    </div>`;
+  document.getElementById('f-source').value = '创始人整理';
+}
+
+// ══ 持久化 ══
+function save() {
+  localStorage.setItem('loquery_db', JSON.stringify(db));
+}
+
+// ══ 导出 ══
+function exportJSON() {
+  if (!db.length) { toast('数据库为空'); return; }
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'loquery-risk-data-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('✅ JSON 已导出');
+}
+
+function exportCSV() {
+  if (!db.length) { toast('数据库为空'); return; }
+  const headers = ['主体名称','账号类型','账号ID','昵称','关联账号','风险等级','问题类型','交易平台','举报条数','涉及金额','最近时间','来源类型','来源详情','证据完整度','前台展示','脱敏描述','判定依据','内部备注'];
+  const rows = db.map(r => [
+    r.subject_name, r.account_type, r.account_id, r.nickname,
+    (r.related_accounts||[]).join('|'),
+    r.risk_level==='high'?'高风险':r.risk_level==='mid'?'中风险':'待观察',
+    r.issue_type, r.platform, r.report_count, r.amount,
+    r.last_date, r.source, r.source_detail,
+    r.evidence_level==='high'?'高':r.evidence_level==='mid'?'中':'低',
+    r.display_status==='yes'?'可前台展示':'仅内部参考',
+    r.desc, r.basis, r.note
+  ].map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'loquery-risk-data-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('✅ CSV 已导出，可用 Excel 打开');
+}
+
+function copyJSON() {
+  if (!db.length) { toast('数据库为空'); return; }
+  navigator.clipboard.writeText(JSON.stringify(db, null, 2))
+    .then(() => toast('✅ JSON 已复制到剪贴板'))
+    .catch(() => toast('复制失败，请手动导出'));
+}
+
+function clearAll() {
+  if (!confirm(`确认清空全部 ${db.length} 条记录？此操作不可恢复。`)) return;
+  db = [];
+  save();
+  renderDB();
+  toast('已清空');
+}
+
+function countBy(list, key) {
+  const map = {};
+  list.forEach(item => {
+    const value = item[key] || '未填写';
+    map[value] = (map[value] || 0) + 1;
+  });
+  return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
+}
+
+function buildStatItems(entries) {
+  if (!entries.length) {
+    return `<div class="mini-item"><span>还没有统计数据</span><strong>0</strong></div>`;
+  }
+  return entries.map(([label, value]) => `
+    <div class="mini-item"><span>${label}</span><strong>${value}</strong></div>
+  `).join('');
+}
+
+// ══ Toast ══
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.style.display = 'none', 2500);
+}
+</script>
+</body>
+</html>
