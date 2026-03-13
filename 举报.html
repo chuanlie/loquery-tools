@@ -188,17 +188,16 @@
     <div class="card">
       <h2>遭遇描述</h2>
       <div class="fgroup">
-        <label>问题类型<span class="req">*</span></label>
-        <select name="问题类型" required>
-          <option value="">请选择最符合的</option>
-          <option>收款后不发货 / 跑路</option>
-          <option>引导加微信私下转账</option>
-          <option>假货 / 货不对版</option>
-          <option>收定金后失联</option>
-          <option>定金纠纷</option>
-          <option>换号重复作案</option>
-          <option>其他</option>
-        </select>
+        <label>问题类型<span class="req">*</span> <span style="font-weight:400;font-size:12px;color:var(--gray)">（可多选）</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="issueTagList">
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="收款后不发货/跑路"> 收款后不发货/跑路</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="引导加微信私下转账"> 引导私下转账</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="假货/货不对版"> 假货/货不对版</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="收定金后失联"> 收定金后失联</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="定金纠纷"> 定金纠纷</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="换号重复作案"> 换号重复作案</label>
+          <label class="ptag"><input type="checkbox" name="问题类型[]" value="其他"> 其他</label>
+        </div>
       </div>
       <div class="frow">
         <div class="fgroup">
@@ -223,7 +222,7 @@
         <input type="file" name="截图证据" accept="image/*,.pdf" multiple id="fileInput" onchange="showFiles(this)">
         <div class="icon">📎</div>
         <p>点击或拖拽上传截图</p>
-        <div class="hint">支持 JPG / PNG / PDF，最多 5 张</div>
+        <div class="hint">支持 JPG / PNG / PDF，最多 20 张</div>
       </div>
       <div id="fileNames"></div>
     </div>
@@ -287,6 +286,10 @@ function showFiles(input) {
 
 document.getElementById('reportForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  if (!document.querySelector('#issueTagList input:checked')) {
+    alert('请至少选择一个问题类型');
+    return;
+  }
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = '提交中…';
